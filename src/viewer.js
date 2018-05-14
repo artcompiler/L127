@@ -8,6 +8,26 @@ window.gcexports.viewer = (() => {
     return null;
   }
   function draw(data) {
+    let title, values;
+    if (!data.title && !data.values) {
+      // Backward compat.
+      title = "";
+      values = data;
+    } else {
+      title = data.title;
+      values = data.values;
+    }
+    let size = 0;
+    values.forEach((v) => {
+      size += +v.count;
+    });
+    if (size < +data.size) {
+      values.push({
+        name: "",
+        count: data.size - size,
+        color: "#DDD",
+      });
+    }
     let totalCount = 30;
     let width = 540,
     height = 540,
@@ -29,9 +49,9 @@ window.gcexports.viewer = (() => {
       .attr("text-anchor", "middle")
       .attr('font-size', '2em')
       .attr("dy", ".50em")
-      .text("Release"); 
+      .text(data.title);
     let g = svg.selectAll(".arc")
-      .data(pie(data))
+      .data(pie(values))
       .enter().append("g");
     g.append("path")
       .attr("d", arc)
@@ -57,6 +77,11 @@ window.gcexports.viewer = (() => {
       .text((d) => {
         return d.data.name;
       });
+    g.append("text")
+      .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
+      .attr("dy", ".35em")
+      .style("text-anchor", "middle")
+      .text(function(d) { return d.data.name ? d.data.count + data.unit : ""; });
     g.selectAll("text")
       .call(wrap, 30);
   }
@@ -100,7 +125,12 @@ window.gcexports.viewer = (() => {
       // owned components.
       let data = this.props.obj.data;
       return (
-        <div id="chart" className="chart-container" data={data} />
+        <div>
+          <link rel="stylesheet" href="https://l116.artcompiler.com/style.css" />
+          <div className="L126 viewer">
+          <div id="chart" className="chart-container" data={data} />
+          </div>
+        </div>
       );
     },
   });

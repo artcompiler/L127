@@ -143,6 +143,27 @@ window.gcexports.viewer = function () {
     return null;
   }
   function draw(data) {
+    var title = void 0,
+        values = void 0;
+    if (!data.title && !data.values) {
+      // Backward compat.
+      title = "";
+      values = data;
+    } else {
+      title = data.title;
+      values = data.values;
+    }
+    var size = 0;
+    values.forEach(function (v) {
+      size += +v.count;
+    });
+    if (size < +data.size) {
+      values.push({
+        name: "",
+        count: data.size - size,
+        color: "#DDD"
+      });
+    }
     var totalCount = 30;
     var width = 540,
         height = 540,
@@ -152,8 +173,8 @@ window.gcexports.viewer = function () {
       return d.count;
     });
     var svg = d3.select('#chart').append("svg").attr("width", width).attr("height", height).append("g").attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
-    svg.append("text").attr("text-anchor", "middle").attr('font-size', '2em').attr("dy", ".50em").text("Release");
-    var g = svg.selectAll(".arc").data(pie(data)).enter().append("g");
+    svg.append("text").attr("text-anchor", "middle").attr('font-size', '2em').attr("dy", ".50em").text(data.title);
+    var g = svg.selectAll(".arc").data(pie(values)).enter().append("g");
     g.append("path").attr("d", arc).style("fill", function (d, i) {
       return d.data.color;
     });
@@ -170,6 +191,11 @@ window.gcexports.viewer = function () {
       return _d[0] < 0 ? "end" : "start";
     }).text(function (d) {
       return d.data.name;
+    });
+    g.append("text").attr("transform", function (d) {
+      return "translate(" + arc.centroid(d) + ")";
+    }).attr("dy", ".35em").style("text-anchor", "middle").text(function (d) {
+      return d.data.name ? d.data.count + data.unit : "";
     });
     g.selectAll("text").call(wrap, 30);
   }
@@ -211,7 +237,16 @@ window.gcexports.viewer = function () {
       // If you have nested components, make sure you send the props down to the
       // owned components.
       var data = this.props.obj.data;
-      return React.createElement("div", { id: "chart", className: "chart-container", data: data });
+      return React.createElement(
+        "div",
+        null,
+        React.createElement("link", { rel: "stylesheet", href: "https://l116.artcompiler.com/style.css" }),
+        React.createElement(
+          "div",
+          { className: "L126 viewer" },
+          React.createElement("div", { id: "chart", className: "chart-container", data: data })
+        )
+      );
     }
   });
   return {
